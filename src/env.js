@@ -1,10 +1,12 @@
+// ✅ Load environment variables from .env before validation
+import "dotenv/config";
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
 export const env = createEnv({
   /**
-   * Specify your server-side environment variables schema here. This way you can ensure the app
-   * isn't built with invalid env vars.
+   * 🧠 Server-side environment variables
+   * These are never exposed to the client.
    */
   server: {
     DATABASE_URL: z.string().url(),
@@ -14,31 +16,33 @@ export const env = createEnv({
   },
 
   /**
-   * Specify your client-side environment variables schema here. This way you can ensure the app
-   * isn't built with invalid env vars. To expose them to the client, prefix them with
-   * `NEXT_PUBLIC_`.
+   * 🌐 Client-side environment variables
+   * Add public vars prefixed with NEXT_PUBLIC_ here if needed.
    */
   client: {
-    // NEXT_PUBLIC_CLIENTVAR: z.string(),
+    // Example:
+    // NEXT_PUBLIC_API_URL: z.string().url(),
   },
 
   /**
-   * You can't destruct `process.env` as a regular object in the Next.js edge runtimes (e.g.
-   * middlewares) or client-side so we need to destruct manually.
+   * ⚙️ Runtime environment mapping
+   * Maps actual environment variables to validation schema.
    */
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
-    // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
+    // NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   },
+
   /**
-   * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
-   * useful for Docker builds.
+   * 🛠️ Skip validation if SKIP_ENV_VALIDATION=1 is set
+   * Useful for Docker or CI/CD builds where .env isn’t yet loaded.
    */
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
+
   /**
-   * Makes it so that empty strings are treated as undefined. `SOME_VAR: z.string()` and
-   * `SOME_VAR=''` will throw an error.
+   * 🧹 Treat empty strings as undefined
+   * So `SOME_VAR=''` fails validation.
    */
   emptyStringAsUndefined: true,
 });
