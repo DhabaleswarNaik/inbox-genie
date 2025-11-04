@@ -18,7 +18,7 @@ export const getAurinkoAuthUrl = async (serviceType: 'Google' | 'Office365' | 'Y
 };
 export const exchangeCodeForAccessToken = async (code: string) => {
  try{
-  const response = await axios.post('https://api.aurinko.io/v1/account', {}, {
+  const response = await axios.post(`https://api.aurinko.io/v1/auth/token/${code}`, {}, {
     auth:{
       username: process.env.AURINKO_CLIENT_ID as string,
       password: process.env.AURINKO_CLIENT_SECRET as string,

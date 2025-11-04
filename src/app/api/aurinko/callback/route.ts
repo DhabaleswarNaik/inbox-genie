@@ -3,6 +3,9 @@ import {auth} from "@clerk/nextjs/server";
 import { exchangeCodeForAccessToken } from "@/lib/aurinko";
 import { getAccountDetails } from "@/lib/aurinko"; 
 import { db } from "@/server/db";
+import { waitUntil } from  '@vercel/functions'
+import axios from "axios";
+import { use } from "react";
 export const GET = async (req : NextRequest) => {
     const {userId}=await auth()
     if(!userId) return NextResponse.json({message:'Unauthorized'}, {status:401});
@@ -30,8 +33,20 @@ export const GET = async (req : NextRequest) => {
             userId,
             emailAddress: accountDetails.email,
             name: accountDetails.name,
-            accessToken: token.accessToken
+            accessToken: token.accessToken,
+            provider: "aurinko" // Add the appropriate provider value here
         }
     })
+    waitUntil(axios.post(`${process.env.NEXT_PUBLIC_URL}/api/initial-sync`,{
+        accountId: token.accountId.toString(),
+        userId
+    }).then(response=>{
+        console.log('Initial sync started:', response.data);
+    })
+    .catch(error=>{
+        console.error('Error starting initial sync:', error);
+    })
+    );
+
     return NextResponse.redirect(new URL('/mail', req.url));
 }
