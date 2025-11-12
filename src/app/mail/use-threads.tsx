@@ -3,7 +3,6 @@ import { getQueryKey } from '@trpc/react-query'
 import React from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 
-
 const useThreads = () => {
     const { data: accounts } = api.mail.getAccounts.useQuery()
     const [accountId] = useLocalStorage('accountId', '')
@@ -15,6 +14,7 @@ const useThreads = () => {
         done,
         tab
     }, { enabled: !!accountId && !!tab, placeholderData: (e) => e, refetchInterval: 1000 * 5 })
+
     return {
         threads,
         isFetching,

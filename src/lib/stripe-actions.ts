@@ -60,3 +60,4 @@ export async function getSubscriptionStatus() {
     }
     return subscription.currentPeriodEnd > new Date();
 }
+

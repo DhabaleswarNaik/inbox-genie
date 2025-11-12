@@ -3,7 +3,6 @@ import useThreads from '@/app/mail/use-threads'
 import { cn } from '@/lib/utils'
 import React from 'react'
 
-
 const TopAccountSwitcher = () => {
     const { accounts } = useThreads()
     return (

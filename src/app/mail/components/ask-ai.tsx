@@ -1,5 +1,5 @@
 'use client'
-import { useChat } from "@ai-sdk/react";
+import { useChat } from 'ai/react'
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button'
 import { AnimatePresence } from 'framer-motion';

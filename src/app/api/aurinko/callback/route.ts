@@ -17,21 +17,21 @@ export const GET = async (req: NextRequest) => {
     const token = await getAurinkoToken(code as string)
     if (!token) return NextResponse.json({ error: "Failed to fetch token" }, { status: 400 });
     const accountDetails = await getAccountDetails(token.accessToken)
-   await db.account.upsert({
-  where: { id: token.accountId.toString() },
-  create: {
-    id: token.accountId.toString(),
-    userId,
-    accessToken: token.accessToken, // ✅ correct field
-    provider: 'Aurinko',
-    emailAddress: accountDetails.email,
-    name: accountDetails.name
-  },
-  update: {
-    accessToken: token.accessToken, // ✅ update it here as well
-  }
-})
-
+    await db.account.upsert({
+        where: { id: token.accountId.toString() },
+        create: {
+            id: token.accountId.toString(),
+            userId,
+            token: token.accessToken,
+            provider: 'Aurinko',
+            emailAddress: accountDetails.email,
+            name: accountDetails.name
+        },
+        update: {
+            token: token.accessToken,
+        }
+    })
+    console.log("✅ Account stored:", token.accountId, token.accessToken);
 
     waitUntil(
 

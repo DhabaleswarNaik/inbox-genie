@@ -1,6 +1,5 @@
 import { Configuration, OpenAIApi } from "openai-edge";
-import { OpenAIStream, StreamingTextResponse } from "ai";
-import type { Message } from "ai";
+import { Message, OpenAIStream, StreamingTextResponse } from "ai";
 
 import { NextResponse } from "next/server";
 import { OramaManager } from "@/lib/orama";

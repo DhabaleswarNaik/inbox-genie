@@ -4,7 +4,7 @@ import { db } from '@/server/db';
 import { cookies } from 'next/headers';
 
 export async function GET(request: Request) {
-    const userId = (await cookies()).get('userId')?.value
+    const userId = cookies().get('userId')?.value
     if (!userId) {
         return NextResponse.json({ error: "No user ID found" }, { status: 400 });
     }
@@ -35,8 +35,8 @@ export async function GET(request: Request) {
                 id: grantId,
                 token,
                 userId,
-            },
-        });
+            }
+        })
 
         return NextResponse.json({ message: "OAuth2 flow completed successfully for grant ID: " + grantId });
     } catch (error) {

@@ -46,7 +46,7 @@ class Account {
     async syncEmails() {
         const account = await db.account.findUnique({
             where: {
-                accessToken: this.token
+                token: this.token
             },
         })
         if (!account) throw new Error("Invalid token")
@@ -107,7 +107,7 @@ class Account {
     async performInitialSync() {
         try {
             // Start the sync process
-            const daysWithin = 30
+            const daysWithin = 3
             let syncResponse = await this.startSync(daysWithin); // Sync emails from the last 7 days
 
             // Wait until the sync is ready

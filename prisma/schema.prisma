@@ -67,7 +67,7 @@ model Account {
 
     binaryIndex Json?
 
-    accessToken        String @unique
+    token        String @unique
     provider     String
     emailAddress String
     name         String
@@ -194,14 +194,4 @@ enum MeetingMessageMethod {
     cancel
     counter
     other
-} 
-model Grant {
-  id     String @id @default(cuid())
-  token  String
-  userId String
-}
-model Post {
-  id        String   @id @default(cuid())
-  name      String
-  createdAt DateTime @default(now())
 }

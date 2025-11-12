@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import Image from 'next/image'
 
 const LandingPage = async () => {
-    const { userId } = await auth()
+    const { userId } = auth()
     if (userId) {
         return redirect('/mail')
     }

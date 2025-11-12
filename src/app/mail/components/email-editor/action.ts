@@ -3,8 +3,7 @@ import TurndownService from 'turndown'
 
 import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { createStreamableValue } from "ai/rsc";
-
+import { createStreamableValue } from 'ai/rsc';
 
 export async function generateEmail(context: string, prompt: string) {
     console.log("context", context)

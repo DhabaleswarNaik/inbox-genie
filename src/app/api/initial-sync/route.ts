@@ -19,17 +19,18 @@ export const POST = async (req: NextRequest) => {
     })
     if (!dbAccount) return NextResponse.json({ error: "ACCOUNT_NOT_FOUND" }, { status: 404 });
 
-    const account = new Account(dbAccount.accessToken)
+    const account = new Account(dbAccount.token)
     await account.createSubscription()
     const response = await account.performInitialSync()
     if (!response) return NextResponse.json({ error: "FAILED_TO_SYNC" }, { status: 500 });
+
     const { deltaToken, emails } = response
-    
+
     await syncEmailsToDatabase(emails, accountId)
 
     await db.account.update({
         where: {
-            id: dbAccount.id,
+            token: dbAccount.token,
         },
         data: {
             nextDeltaToken: deltaToken,

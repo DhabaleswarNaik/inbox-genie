@@ -55,8 +55,7 @@ export const POST = async (req: NextRequest) => {
     if (!account) {
         return new Response("Account not found", { status: 404 });
     }
-    const acc = new Account(account.accessToken)
-
+    const acc = new Account(account.token)
     waitUntil(acc.syncEmails().then(() => {
         console.log("Synced emails")
     }))

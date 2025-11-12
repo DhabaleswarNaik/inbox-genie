@@ -1,29 +1,33 @@
-// src/app/layout.tsx
-import "../styles/globals.css"; // or "./globals.css" if it's in src/app/
+import "@/styles/globals.css";
+import Kbar from "@/app/mail/components/kbar";
 import { ClerkProvider } from "@clerk/nextjs";
-import { ThemeProvider } from "@/components/theme-provider";
-import localFont from "next/font/local";
+
+import { GeistSans } from "geist/font/sans";
+import { type Metadata } from "next";
+
 import { TRPCReactProvider } from "@/trpc/react";
+import { ThemeProvider } from "@/components/theme-provicer";
+import { Toaster } from "sonner";
 
-// ✅ Correct: load from /fonts (served from public/fonts)
-const GeistSans = localFont({
-  src: "/fonts/Geist-Regular.otf",
-  variable: "--font-geist",
-  display: "swap",
-});
+export const metadata: Metadata = {
+  title: "Normal Human",
+  icons: [{ rel: "icon", url: "/favicon.ico" }],
+};
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className={GeistSans.variable} suppressHydrationWarning>
+      <html lang="en" className={`${GeistSans.variable}`}>
         <body>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <TRPCReactProvider>{children}</TRPCReactProvider>
+          <ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange>
+            <TRPCReactProvider>
+              <Kbar>
+                {children}
+              </Kbar>
+            </TRPCReactProvider>
+            <Toaster />
           </ThemeProvider>
         </body>
       </html>

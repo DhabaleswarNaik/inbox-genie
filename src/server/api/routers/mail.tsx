@@ -9,25 +9,18 @@ import { emailAddressSchema } from "@/lib/types";
 import { FREE_CREDITS_PER_DAY } from "@/app/constants";
 
 export const authoriseAccountAccess = async (accountId: string, userId: string) => {
-  const account = await db.account.findFirst({
-    where: {
-      id: accountId,
-      userId: userId,
-    },
-    select: {
-      id: true,
-      emailAddress: true,
-      name: true,
-      accessToken: true, // ✅ fixed from token → accessToken
-      provider: true,
-      nextDeltaToken: true,
-    },
-  });
-
-  if (!account) throw new Error("Invalid token");
-  return account;
-};
-
+    const account = await db.account.findFirst({
+        where: {
+            id: accountId,
+            userId: userId,
+        },
+        select: {
+            id: true, emailAddress: true, name: true, token: true
+        }
+    })
+    if (!account) throw new Error("Invalid token")
+    return account
+}
 
 const inboxFilter = (accountId: string): Prisma.ThreadWhereInput => ({
     accountId,
@@ -210,7 +203,7 @@ export const mailRouter = createTRPCRouter({
     })).mutation(async ({ ctx, input }) => {
         const account = await authoriseAccountAccess(input.accountId, ctx.auth.userId)
         if (!account) throw new Error("Invalid token")
-        const acc = new Account(account.accessToken)
+        const acc = new Account(account.token)
         acc.syncEmails()
     }),
     setUndone: protectedProcedure.input(z.object({
@@ -279,7 +272,7 @@ export const mailRouter = createTRPCRouter({
         accountId: z.string()
     })).query(async ({ ctx, input }) => {
         const account = await authoriseAccountAccess(input.accountId, ctx.auth.userId)
-        return await getEmailDetails(account.accessToken, input.emailId)
+        return await getEmailDetails(account.token, input.emailId)
     }),
     sendEmail: protectedProcedure.input(z.object({
         accountId: z.string(),
@@ -294,7 +287,7 @@ export const mailRouter = createTRPCRouter({
         threadId: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
         const acc = await authoriseAccountAccess(input.accountId, ctx.auth.userId)
-        const account = new Account(acc.accessToken)
+        const account = new Account(acc.token)
         console.log('sendmail', input)
         await account.sendEmail({
             body: input.body,

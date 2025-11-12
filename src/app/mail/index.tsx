@@ -1,17 +1,13 @@
-'use client';
-
 import { Mail } from '@/app/mail/components/mail'
 import { cookies } from 'next/headers'
 
-export default async function MailPage() {
-  // ✅ Await the cookies() call
-  const cookieStore = await cookies()
+export default function MailPage() {
 
-  const layout = cookieStore.get("react-resizable-panels:layout:mail")?.value
-  const collapsed = cookieStore.get("react-resizable-panels:collapsed")?.value
+  const layout = cookies().get("react-resizable-panels:layout:mail")
+  const collapsed = cookies().get("react-resizable-panels:collapsed")
 
-  const defaultLayout = layout ? JSON.parse(layout) : undefined
-  const defaultCollapsed = collapsed ? JSON.parse(collapsed) : undefined
+  const defaultLayout = layout ? JSON.parse(layout.value) : undefined
+  const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined
 
   return (
     <>

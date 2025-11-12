@@ -1,20 +1,24 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
 const isPublicRoute = createRouteMatcher([
-  '/sign-in(.*)', 
-  '/sign-up(.*)', 
-  '/api/clerk/webhook(.*)',
+  '/',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/api/webhooks(.*)',
   '/api/initial-sync(.*)',
   '/api/aurinko/webhook(.*)',
   '/api/stripe(.*)',
   '/privacy',
-  '/terms-of-service'])
+  '/terms-of-service'
+])
 
-export default clerkMiddleware(async (auth, req) => {
+export default clerkMiddleware((auth, req) => {
   if (!isPublicRoute(req)) {
-    await auth.protect()
+    auth().protect()
   }
+
 })
+
 
 export const config = {
   matcher: [
@@ -23,4 +27,4 @@ export const config = {
     // Always run for API routes
     '/(api|trpc)(.*)',
   ],
-} 
+};
