@@ -195,3 +195,13 @@ enum MeetingMessageMethod {
     counter
     other
 } 
+model Grant {
+  id     String @id @default(cuid())
+  token  String
+  userId String
+}
+model Post {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+}
