@@ -1,6 +1,6 @@
 'use client'
 import { Button } from "@/components/ui/button"
-import { getAurinkoAuthorizationUrl } from "@/lib/aurinko"
+import { getAurinkoAuthorizationUrl } from '@/lib/aurinko-auth';
 import { api } from "@/trpc/react"
 import { useLocalStorage } from "usehooks-ts"
 

@@ -1,3 +1,4 @@
+import { refreshAurinkoToken } from './aurinko';
 import type { EmailHeader, EmailMessage, SyncResponse, SyncUpdatedResponse } from '@/lib/types';
 import { db } from '@/server/db';
 import axios from 'axios';
@@ -7,9 +8,11 @@ const API_BASE_URL = 'https://api.aurinko.io/v1';
 
 class Account {
   private token: string;
+  private accountId?: string;
 
-  constructor(token: string) {
+  constructor(token: string, accountId?: string) {
     this.token = token;
+    this.accountId = accountId;
   }
 
   private async startSync(daysWithin: number): Promise<SyncResponse> {
@@ -50,7 +53,7 @@ class Account {
   }
 
   async syncEmails() {
-    const account = await db.account.findUnique({
+    let account = await db.account.findUnique({
       where: { token: this.token },
     });
 
@@ -59,12 +62,87 @@ class Account {
       throw new Error('Invalid token');
     }
 
+    // Refresh token if expired or close to expiring (within 5 minutes)
+    if (account.refreshToken && account.expiresAt && account.expiresAt < Date.now() / 1000 + 300) {
+      try {
+        console.log('🔄 Refreshing expired token...');
+        const newToken = await refreshAurinkoToken(account.refreshToken);
+        account = await db.account.update({
+          where: { id: account.id },
+          data: {
+            token: newToken.accessToken,
+            refreshToken: newToken.refreshToken,
+            expiresAt: Math.floor(Date.now() / 1000) + newToken.expiresIn
+          }
+        });
+        this.token = newToken.accessToken;
+        console.log('✅ Token refreshed');
+      } catch (error) {
+        console.error('❌ Failed to refresh token:', error);
+      }
+    }
+
     if (!account.nextDeltaToken) {
-      console.warn('⚠️ syncEmails: No delta token');
+      console.warn('⚠️ syncEmails: No delta token, performing initial sync');
+      const initResponse = await this.performInitialSync();
+      if (!initResponse) return;
+      const { emails, deltaToken } = initResponse;
+      await syncEmailsToDatabase(emails, account.id);
+      await db.account.update({
+        where: { id: account.id },
+        data: { nextDeltaToken: deltaToken }
+      });
       return;
     }
 
-    let response = await this.getUpdatedEmails({ deltaToken: account.nextDeltaToken });
+    let response: SyncUpdatedResponse;
+    try {
+      response = await this.getUpdatedEmails({ deltaToken: account.nextDeltaToken ?? undefined });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          console.warn('⚠️ syncEmails: Access token invalid (401), trying refresh...');
+          if (account.refreshToken) {
+            try {
+              const newToken = await refreshAurinkoToken(account.refreshToken);
+              account = await db.account.update({
+                where: { id: account.id },
+                data: {
+                  token: newToken.accessToken,
+                  refreshToken: newToken.refreshToken,
+                  expiresAt: Math.floor(Date.now() / 1000) + newToken.expiresIn
+                }
+              });
+              this.token = newToken.accessToken;
+              // Retry
+              response = await this.getUpdatedEmails({ deltaToken: account.nextDeltaToken ?? undefined });
+            } catch (refreshErr) {
+              console.error('❌ Failed to refresh token on 401:', refreshErr);
+              throw error;
+            }
+          } else {
+            console.error('❌ No refresh token available');
+            throw error;
+          }
+        } else if (error.response?.status === 410) {
+          console.warn('⚠️ syncEmails: Token expired or invalid, performing initial sync');
+          const initResponse = await this.performInitialSync();
+          if (!initResponse) return;
+          const { emails, deltaToken } = initResponse;
+          await syncEmailsToDatabase(emails, account.id);
+          await db.account.update({
+            where: { id: account.id },
+            data: { nextDeltaToken: deltaToken }
+          });
+          return;
+        }
+      }
+      if (!response!) { // If response is still undefined (e.g. 401 retry failed or other error)
+        console.error('❌ syncEmails: Error fetching updated emails', error);
+        throw error;
+      }
+    }
+
     let allEmails: EmailMessage[] = response.records || [];
     let storedDeltaToken = account.nextDeltaToken;
 
@@ -73,10 +151,15 @@ class Account {
     }
 
     while (response.nextPageToken) {
-      response = await this.getUpdatedEmails({ pageToken: response.nextPageToken });
-      allEmails = allEmails.concat(response.records || []);
-      if (response.nextDeltaToken) {
-        storedDeltaToken = response.nextDeltaToken;
+      try {
+        response = await this.getUpdatedEmails({ pageToken: response.nextPageToken });
+        allEmails = allEmails.concat(response.records || []);
+        if (response.nextDeltaToken) {
+          storedDeltaToken = response.nextDeltaToken;
+        }
+      } catch (error) {
+        console.error('❌ syncEmails: Error fetching next page', error);
+        break;
       }
     }
 
@@ -209,6 +292,56 @@ class Account {
       console.log('📤 Email sent', response.data);
       return response.data;
     } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        console.warn('⚠️ sendEmail: Access token invalid (401), trying refresh...');
+        try {
+          let account;
+          if (this.accountId) {
+            account = await db.account.findUnique({ where: { id: this.accountId } });
+          } else {
+            account = await db.account.findUnique({ where: { token: this.token } });
+          }
+
+          if (account && account.refreshToken) {
+            const newToken = await refreshAurinkoToken(account.refreshToken);
+            await db.account.update({
+              where: { id: account.id },
+              data: {
+                token: newToken.accessToken,
+                refreshToken: newToken.refreshToken,
+                expiresAt: Math.floor(Date.now() / 1000) + newToken.expiresIn,
+              },
+            });
+            this.token = newToken.accessToken;
+
+            // Retry the request with new token
+            const response = await axios.post(
+              `${API_BASE_URL}/email/messages`,
+              {
+                from,
+                subject,
+                body,
+                inReplyTo,
+                references,
+                threadId,
+                to,
+                cc,
+                bcc,
+                replyTo: [replyTo],
+              },
+              {
+                params: { returnIds: true },
+                headers: { Authorization: `Bearer ${this.token}` },
+              }
+            );
+            console.log('📤 Email sent (after refresh)', response.data);
+            return response.data;
+          }
+        } catch (refreshError) {
+          console.error('❌ Failed to refresh token during sendEmail:', refreshError);
+        }
+      }
+
       if (axios.isAxiosError(error)) {
         console.error('❌ Send email error:', JSON.stringify(error.response?.data, null, 2));
       } else {

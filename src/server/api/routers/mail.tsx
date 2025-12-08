@@ -287,7 +287,7 @@ export const mailRouter = createTRPCRouter({
         threadId: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
         const acc = await authoriseAccountAccess(input.accountId, ctx.auth.userId)
-        const account = new Account(acc.token)
+        const account = new Account(acc.token, acc.id)
         console.log('sendmail', input)
         await account.sendEmail({
             body: input.body,

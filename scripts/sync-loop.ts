@@ -1,5 +1,5 @@
 import { db } from '@/server/db';
-import { syncEmailsToDatabase } from '@/lib/sync-to-db';
+import Account from '@/lib/account';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -11,16 +11,26 @@ const runSyncLoop = async () => {
       const accounts = await db.account.findMany();
 
       for (const account of accounts) {
+        if (!account.token) {
+          console.log(`⚠️ Account ${account.id} has no token, skipping`);
+          continue;
+        }
+
+        const accountInstance = new Account(account.token);
         console.log(`🔄 Syncing emails for account: ${account.id}`);
-        await syncEmailsToDatabase([], account.id);
+        try {
+          await accountInstance.syncEmails();
+        } catch (syncError) {
+          console.error(`❌ Failed to sync account ${account.id}:`, syncError);
+        }
       }
 
-      console.log(`✅ Sync complete at ${new Date().toISOString()}`);
+      console.log(`✅ Sync cycle complete at ${new Date().toISOString()}`);
     } catch (err) {
       console.error('❌ Error in sync loop:', err);
     }
 
-    await sleep(1000); // wait for 1 second before next sync
+    await sleep(5000); // wait for 5 seconds before next sync cycle
   }
 };
 

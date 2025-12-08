@@ -46,6 +46,12 @@ export const POST = async (req: NextRequest) => {
 
   console.log("✅ Webhook validated. Processing sync...");
 
+  try {
+    console.log("📦 Webhook payload keys:", Object.keys(payload || {}));
+  } catch (e) {
+    console.error("⚠️ Failed to log payload keys");
+  }
+
   const accountId = payload?.accountId?.toString();
   if (!accountId) {
     return new Response("Missing accountId", { status: 400 });
