@@ -54,6 +54,8 @@ CREATE TABLE "Account" (
     "userId" TEXT NOT NULL,
     "binaryIndex" JSONB,
     "token" TEXT NOT NULL,
+    "refreshToken" TEXT,
+    "expiresAt" INTEGER,
     "provider" TEXT NOT NULL,
     "emailAddress" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -137,33 +139,25 @@ CREATE TABLE "EmailAttachment" (
 -- CreateTable
 CREATE TABLE "_ToEmails" (
     "A" TEXT NOT NULL,
-    "B" TEXT NOT NULL,
-
-    CONSTRAINT "_ToEmails_AB_pkey" PRIMARY KEY ("A","B")
+    "B" TEXT NOT NULL
 );
 
 -- CreateTable
 CREATE TABLE "_CcEmails" (
     "A" TEXT NOT NULL,
-    "B" TEXT NOT NULL,
-
-    CONSTRAINT "_CcEmails_AB_pkey" PRIMARY KEY ("A","B")
+    "B" TEXT NOT NULL
 );
 
 -- CreateTable
 CREATE TABLE "_BccEmails" (
     "A" TEXT NOT NULL,
-    "B" TEXT NOT NULL,
-
-    CONSTRAINT "_BccEmails_AB_pkey" PRIMARY KEY ("A","B")
+    "B" TEXT NOT NULL
 );
 
 -- CreateTable
 CREATE TABLE "_ReplyToEmails" (
     "A" TEXT NOT NULL,
-    "B" TEXT NOT NULL,
-
-    CONSTRAINT "_ReplyToEmails_AB_pkey" PRIMARY KEY ("A","B")
+    "B" TEXT NOT NULL
 );
 
 -- CreateIndex
@@ -221,13 +215,25 @@ CREATE INDEX "Email_sentAt_idx" ON "Email"("sentAt");
 CREATE UNIQUE INDEX "EmailAddress_accountId_address_key" ON "EmailAddress"("accountId", "address");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "_ToEmails_AB_unique" ON "_ToEmails"("A", "B");
+
+-- CreateIndex
 CREATE INDEX "_ToEmails_B_index" ON "_ToEmails"("B");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "_CcEmails_AB_unique" ON "_CcEmails"("A", "B");
 
 -- CreateIndex
 CREATE INDEX "_CcEmails_B_index" ON "_CcEmails"("B");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "_BccEmails_AB_unique" ON "_BccEmails"("A", "B");
+
+-- CreateIndex
 CREATE INDEX "_BccEmails_B_index" ON "_BccEmails"("B");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "_ReplyToEmails_AB_unique" ON "_ReplyToEmails"("A", "B");
 
 -- CreateIndex
 CREATE INDEX "_ReplyToEmails_B_index" ON "_ReplyToEmails"("B");

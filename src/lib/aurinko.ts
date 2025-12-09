@@ -45,37 +45,40 @@ export const getAurinkoToken = async (code: string) => {
 
 export const refreshAurinkoToken = async (refreshToken: string) => {
   try {
+    const params = new URLSearchParams({
+      clientId: process.env.AURINKO_CLIENT_ID as string,
+      clientSecret: process.env.AURINKO_CLIENT_SECRET as string,
+      refreshToken,
+      grantType: "refresh_token",
+    });
+
     const response = await axios.post(
-      `https://api.aurinko.io/v1/auth/token`,
-      new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken,
-      }),
+      "https://api.aurinko.io/v1/auth/token",
+      params,
       {
-        auth: {
-          username: process.env.AURINKO_CLIENT_ID as string,
-          password: process.env.AURINKO_CLIENT_SECRET as string,
-        },
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
       }
     );
 
-    return response.data as {
-      accessToken: string,
-      refreshToken: string,
-      expiresIn: number
-    }
+    return {
+      accessToken: response.data.accessToken,
+      refreshToken: response.data.refreshToken ?? refreshToken,
+      expiresIn: response.data.expiresIn,
+    };
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.error('Error refreshing Aurinko token:', error.response?.data);
+      console.error(
+        "Error refreshing Aurinko token:",
+        error.response?.data || error.message
+      );
     } else {
-      console.error('Unexpected error refreshing Aurinko token:', error);
+      console.error("Unknown error refreshing Aurinko token:", error);
     }
-    throw error;
+
+    throw new Error("Failed to refresh Aurinko token");
   }
-}
+};
+
 
 export const getAccountDetails = async (accessToken: string) => {
   try {
