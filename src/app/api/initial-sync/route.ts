@@ -25,7 +25,8 @@ export const POST = async (req: NextRequest) => {
       return NextResponse.json({ error: "ACCOUNT_NOT_FOUND" }, { status: 404 });
     }
 
-    const account = new Account(dbAccount.token);
+    const account = new Account(dbAccount.token, dbAccount.id);
+
 
     console.log("🌐 Creating webhook subscription...");
     await account.createSubscription();

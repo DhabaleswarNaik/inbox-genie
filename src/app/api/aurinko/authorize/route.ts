@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { getAurinkoAuthorizationUrl } from '@/lib/aurinko';
+import { NextResponse } from "next/server";
+import { getAurinkoAuthorizationUrl } from "@/lib/aurinko";
 
 export async function POST(req: Request) {
   try {

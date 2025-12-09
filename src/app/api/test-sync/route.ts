@@ -243,4 +243,3 @@ export const GET = async (req: NextRequest) => {
         return NextResponse.json({ error: 'Test sync failed' }, { status: 500 });
     }
 };
-
